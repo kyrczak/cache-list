@@ -20,8 +20,12 @@ struct Node {
 void addNodeBefore(Node** begin, Node** end, unsigned long long int value, int position, Node* iterators[ITERATORSIZE]);
 void addNodeAfter(Node** begin, Node** end, unsigned long long int value, int position, Node* iterators[ITERATORSIZE]);
 void deleteNode(Node** begin, Node** end, Node* iteratators[ITERATORSIZE], int position);
+void initIterator(Node* iterators[ITERATORSIZE], Node* begin, Node* end, int position, int index);
+void increaseIterator(Node* iterators[ITERATORSIZE], Node* end, int index);
+void decreaseIterator(Node* iterators[ITERATORSIZE], Node* begin, int index);
 Node* prepareNewNode(unsigned long long int value);
-void printList(Node* begin, int iterator);
+void printList(Node* begin, int iterator, Node* iterators[ITERATORSIZE]);
+void updateIterators(Node* iterators[ITERATORSIZE], Node* temp, Node* begin, Node* end);
 
 int main() {
 	Node* iterators[ITERATORSIZE];
@@ -68,27 +72,48 @@ int main() {
 			}
 		}
 		else if (strcmp(command, "P") == 0) {
-		scanf("%s", attribute);
-		sscanf(attribute, "%i", &attributeValue);
-		if (strcmp(attribute, "ALL") == 0) {
-			printList(begin, ALL);
-		}
-		else {
-			printList(begin, attributeValue);
-		}
+			scanf("%s", attribute);
+			sscanf(attribute, "%i", &attributeValue);
+			if (strcmp(attribute, "ALL") == 0) {
+				printList(begin, ALL,iterators);
+			}
+			else {
+				printList(begin, attributeValue,iterators);
+			}
 		}
 		else if (strcmp(command, "R") == 0) {
-		scanf("%s", attribute);
-		sscanf(attribute, "%i", &attributeValue);
-		if (strcmp(attribute, "BEG") == 0) {
-			deleteNode(&begin, &end, iterators, BEG);
+			scanf("%s", attribute);
+			sscanf(attribute, "%i", &attributeValue);
+			if (strcmp(attribute, "BEG") == 0) {
+				deleteNode(&begin, &end, iterators, BEG);
+			}
+			else if (strcmp(attribute, "END") == 0) {
+				deleteNode(&begin, &end, iterators, END);
+			}
+			else {
+				deleteNode(&begin, &end, iterators, attributeValue);
+			}
 		}
-		else if (strcmp(attribute, "END") == 0) {
-			deleteNode(&begin, &end, iterators, END);
+		else if (strcmp(command, "i") == 0) {
+			scanf("%lli %s", &value, attribute);
+			sscanf(attribute, "%i", &attributeValue);
+			if (strcmp(attribute, "BEG") == 0) {
+				initIterator(iterators, begin, end, BEG, value);
+			}
+			else if (strcmp(attribute, "END") == 0) {
+				initIterator(iterators, begin, end, END, value);
+			}
+			else {
+				initIterator(iterators, begin, end, attributeValue, value);
+			}
 		}
-		else {
-			deleteNode(&begin, &end, iterators, attributeValue);
+		else if (strcmp(command, "+") == 0) {
+			scanf("%i", &attributeValue);
+			increaseIterator(iterators, end, attributeValue);
 		}
+		else if (strcmp(command, "-") == 0) {
+			scanf("%i", &attributeValue);
+			decreaseIterator(iterators, begin, attributeValue);
 		}
 	}
 
@@ -155,49 +180,58 @@ void addNodeAfter(Node** begin, Node** end, unsigned long long int value, int po
 			return;
 		}
 		else {
-			newNode->next = iterators[position]->next;
-			newNode->previous = iterators[position];
-			iterators[position]->next->previous = newNode;
-			iterators[position]->next = newNode;
 			if (iterators[position] == (*end)) {
+				newNode->previous = iterators[position];
+				iterators[position]->next = newNode;
 				(*end) = newNode;
+			}
+			else {
+				newNode->next = iterators[position]->next;
+				newNode->previous = iterators[position];
+				iterators[position]->next->previous = newNode;
+				iterators[position]->next = newNode;
 			}
 		}
 	}
 }
-void deleteNode(Node** begin, Node** end, Node* iteratators[ITERATORSIZE], int position) {
+void deleteNode(Node** begin, Node** end, Node* iterators[ITERATORSIZE], int position) {
 	if ((*begin) == (*end)) {
 		Node* temp = *begin;
 		(*begin) = NULL;
 		(*end) = NULL;
-		//updateIterators();
+		updateIterators(iterators, temp, *begin, *end);
 		delete temp;
 	}
 	else if (position == BEG) {
 		Node* temp = *begin;
 		(*begin)->next->previous = NULL;
 		(*begin) = temp->next;
-		//updateIterators();
+		updateIterators(iterators, temp, *begin, *end);
 		delete temp;
 	}
 	else if (position == END) {
 		Node* temp = *end;
 		(*end)->previous->next = NULL;
 		(*end) = temp->previous;
-		//updateIterators();
+		updateIterators(iterators, temp, *begin, *end);
 		delete temp;
 	}
 	else {
-		Node* temp = iteratators[position];
-		temp->previous->next = iteratators[position]->next;
-		temp->next->previous = iteratators[position]->previous;
-		if (iteratators[position] == (*end)) {
+		Node* temp = iterators[position];
+		if (iterators[position] == (*end)) {
+			temp->previous->next = NULL;
 			(*end) = temp->previous;
 		}
-		if (iteratators[position] == (*begin)) {
+		else if (iterators[position] == (*begin)) {
+			temp->next->previous = NULL;
 			(*begin) = temp->next;
 		}
-		//updateIterators();
+		else {
+			temp->previous->next = iterators[position]->next;
+			temp->next->previous = iterators[position]->previous;
+		}
+		
+		updateIterators(iterators, temp, *begin, *end);
 		delete temp;
 	}
 }
@@ -208,7 +242,7 @@ Node* prepareNewNode(unsigned long long int value) {
 	node->previous = NULL;
 	return node;
 }
-void printList(Node* begin, int iterator) {
+void printList(Node* begin, int iterator, Node* iterators[ITERATORSIZE]) {
 	if (begin != NULL) {
 		if (iterator == -1) {
 			Node* temp = begin;
@@ -217,6 +251,45 @@ void printList(Node* begin, int iterator) {
 				temp = temp->next;
 			} while (temp != NULL);
 			cout << endl;
+		}
+		else {
+			cout << iterators[iterator]->value << endl;
+		}
+	}
+}
+void initIterator(Node* iterators[ITERATORSIZE], Node* begin, Node* end, int position, int index) {
+	if (position == BEG) {
+		iterators[index] = begin;
+	}
+	else if (position == END) {
+		iterators[index] = end;
+	}
+	else {
+		iterators[index] = iterators[position];
+	}
+}
+void increaseIterator(Node* iterators[ITERATORSIZE], Node* end, int index) {
+	if (iterators[index] != end) {
+		iterators[index] = iterators[index]->next;
+	}
+}
+void decreaseIterator(Node* iterators[ITERATORSIZE], Node* begin, int index) {
+	if (iterators[index] != begin) {
+		iterators[index] = iterators[index]->previous;
+	}
+}
+void updateIterators(Node* iterators[ITERATORSIZE], Node* temp, Node* begin, Node* end) {
+	for (int i = 0; i < ITERATORSIZE; i++) {
+		if (iterators[i] == temp) {
+			if (temp->next == NULL) {
+				iterators[i] = end;
+			}
+			else if (temp == begin && temp == end) {
+				iterators[i] = NULL;
+			}
+			else {
+				iterators[i] = temp->next;
+			}
 		}
 	}
 }
