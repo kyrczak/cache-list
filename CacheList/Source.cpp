@@ -145,13 +145,18 @@ void addNodeBefore(Node** begin, Node** end, unsigned long long int value, int p
 			return;
 		}
 		else {
-			newNode->next = iterators[position];
-			newNode->previous = iterators[position]->previous;
-			iterators[position]->previous->next = newNode;
-			iterators[position]->previous = newNode;
 			if (iterators[position] == (*begin)) {
+				newNode->next = iterators[position];
+				iterators[position]->previous = newNode;
 				(*begin) = newNode;
 			}
+			else {
+				newNode->next = iterators[position];
+				newNode->previous = iterators[position]->previous;
+				iterators[position]->previous->next = newNode;
+				iterators[position]->previous = newNode;
+
+			}			
 		}
 	}
 }
@@ -247,13 +252,13 @@ void printList(Node* begin, int iterator, Node* iterators[ITERATORSIZE]) {
 		if (iterator == -1) {
 			Node* temp = begin;
 			do {
-				cout << temp->value << " ";
+				printf("%lli ", temp->value);
 				temp = temp->next;
 			} while (temp != NULL);
-			cout << endl;
+			printf("\n");
 		}
 		else {
-			cout << iterators[iterator]->value << endl;
+			printf("%lli\n", iterators[iterator]->value);
 		}
 	}
 }
